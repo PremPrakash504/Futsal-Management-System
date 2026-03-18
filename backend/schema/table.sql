@@ -8,8 +8,9 @@ CREATE TABLE super_admin (
 CREATE TABLE companies (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    number VARCHAR(20),
-    address VARCHAR(255)
+    email VARCHAR(255) NOT NULL UNIQUE,
+    number VARCHAR(20) NOT NULL,
+    address VARCHAR(255) NOT NULL
 );
 
 

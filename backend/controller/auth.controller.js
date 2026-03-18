@@ -5,6 +5,11 @@ import db from "../config/db.connect.js";
 export const loginAdmin = async (req, res) => {
   try {
     const { email, password } = req.body;
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ message: "email and password are required" });
+    }
 
     // 1. check user exists
     const [rows] = await db.execute(
@@ -13,7 +18,7 @@ export const loginAdmin = async (req, res) => {
     );
 
     if (rows.length === 0) {
-      return res.status(404).json({ message: "Invalid Credentails" });
+      return res.status(404).json({ message: "User not found" });
     }
 
     const admin = rows[0];
@@ -27,10 +32,15 @@ export const loginAdmin = async (req, res) => {
 
     // 3. token generate
     const token = jwt.sign(
-      { id: admin.id, email: admin.email },
-      "secretkey", // later .env ma rakhne
-      { expiresIn: "1d" },
+      { id: admin.id, email: admin.email, role: "super_admin" },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.EXPIRE },
     );
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: "none",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
 
     res.json({
       message: "Login successful",
@@ -38,5 +48,167 @@ export const loginAdmin = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+export const signout = async (req, res) => {
+  try {
+    res.clearCookie("token");
+    res.status(200).json({ message: "signout successful" });
+  } catch (error) {
+    res.status(400).json({ message: "server error", error });
+  }
+};
+
+export const addVendor = async (req, res) => {
+  const { company_id, username, email, password, number, package_type } =
+    req.body;
+  try {
+    if ((!company_id, !username, !email, !password, !number)) {
+      return res
+        .status(400)
+        .json({ message: "All required fields must be filled" });
+    }
+    const [existingVendor] = await db.execute(
+      "SELECT email FROM vendors WHERE email =?",
+      [email],
+    );
+    if (existingVendor.length > 0) {
+      return res.status(400).json({ message: "Vendor already exists" });
+    }
+    const hashPassword = await bcrypt.hash(password, 10);
+    await db.execute(
+      "INSERT INTO vendors (company_id, username, email, password, number, package_type) VALUES (?, ?, ?, ?, ?, ?)",
+      [
+        company_id,
+        username,
+        email,
+        hashPassword,
+        number,
+        package_type || "normal",
+      ],
+    );
+    res.status(201).json({ message: "Vendor added successfully" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Failed to add vendor", error: error.message });
+  }
+};
+
+export const getVendor = async (req, res) => {
+  try {
+    const { email } = req.params; //passing email to the url to get vendor by email
+    const [rows] = await db.execute(
+      "SELECT id, company_id, username, email, number, package_type FROM vendors WHERE email = ?",
+      [email],
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Vendor not found" });
+    }
+
+    const vendor = rows[0];
+
+    res.status(200).json({
+      message: "Vendor fetched successfully",
+      vendor,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+
+export const addCompany = async (req, res) => {
+  const { name, email, number, address } = req.body;
+  try {
+    if (!name || !email || !number || !address) {
+      return res
+        .status(400)
+        .json({ message: "All required fields must be filled" });
+    }
+
+    const [existingCompany] = await db.execute(
+      "SELECT email FROM companies WHERE email = ?",
+      [email],
+    );
+
+    if (existingCompany.length > 0) {
+      return res.status(400).json({ message: "Company already exists" });
+    }
+
+    await db.execute(
+      "INSERT INTO companies (name, email, number, address) VALUES (?, ?, ?, ?)",
+      [name, email, number, address],
+    );
+
+    res.status(201).json({ message: "Company added successfully" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Failed to add company", error: error.message });
+  }
+};
+
+export const getCompanyForAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [rows] = await db.execute("SELECT * FROM companies WHERE id = ?", [
+      id,
+    ]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    res.status(200).json({
+      message: "Company fetched successfully",
+      company: rows[0],
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+export const deleteCompany = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [rows] = await db.execute("SELECT * FROM companies WHERE id = ?", [
+      id,
+    ]);
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+    await db.execute("DELETE FROM companies WHERE id = ?", [id]);
+    res.status(200).json({
+      message: "company deleted successfully",
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Failed to delete company", error: error.message });
+  }
+};
+export const verifyToken = async (req, res) => {
+  try {
+    const token = req.cookies.token;
+
+    if (!token) {
+      return res.status(401).json({ message: "No token provided" });
+    }
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+      if (err) {
+        res.clearCookie("token");
+        return res.status(401).json({ message: "Token expired or invalid" });
+      }
+      res.status(200).json({
+        message: "Token is valid",
+        user: decoded,
+      });
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Server error", error });
   }
 };
