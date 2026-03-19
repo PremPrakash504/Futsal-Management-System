@@ -27,3 +27,22 @@ CREATE TABLE vendors (
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
+
+CREATE TABLE schedules (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    company_id INT,
+    member_id INT,
+    start_time TIME,
+    end_time TIME,
+    FOREIGN KEY (company_id) REFERENCES companies(id),
+    FOREIGN KEY (member_id) REFERENCES members(id)
+);
+CREATE TABLE members (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    company_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    email VARCHAR(255) UNIQUE,
+    FOREIGN KEY (company_id) REFERENCES companies(id)
+        
+);

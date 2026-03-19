@@ -98,10 +98,10 @@ export const addVendor = async (req, res) => {
 
 export const getVendor = async (req, res) => {
   try {
-    const { email } = req.params; //passing email to the url to get vendor by email
+    const { id } = req.params; 
     const [rows] = await db.execute(
-      "SELECT id, company_id, username, email, number, package_type FROM vendors WHERE email = ?",
-      [email],
+      "SELECT id, company_id, username, email, number, package_type FROM vendors WHERE id = ?",
+      [id],
     );
 
     if (rows.length === 0) {
