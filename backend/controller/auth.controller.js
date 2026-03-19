@@ -98,21 +98,17 @@ export const addVendor = async (req, res) => {
 
 export const getVendor = async (req, res) => {
   try {
-    const { id } = req.params; 
-    const [rows] = await db.execute(
-      "SELECT id, company_id, username, email, number, package_type FROM vendors WHERE id = ?",
-      [id],
-    );
+    const [rows] = await db.execute("SELECT * FROM vendors ");
 
     if (rows.length === 0) {
       return res.status(404).json({ message: "Vendor not found" });
     }
 
-    const vendor = rows[0];
+    
 
     res.status(200).json({
-      message: "Vendor fetched successfully",
-      vendor,
+      message: "Vendors fetched successfully",
+      vendors: rows,
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
@@ -152,19 +148,14 @@ export const addCompany = async (req, res) => {
 
 export const getCompanyForAdmin = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    const [rows] = await db.execute("SELECT * FROM companies WHERE id = ?", [
-      id,
-    ]);
+    const [rows] = await db.execute("SELECT * FROM companies");
 
     if (rows.length === 0) {
-      return res.status(404).json({ message: "Company not found" });
+      return res.status(404).json({ message: "No companies found" });
     }
-
     res.status(200).json({
-      message: "Company fetched successfully",
-      company: rows[0],
+      message: "Companies fetched successfully",
+      companies: rows,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
