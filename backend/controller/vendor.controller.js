@@ -160,3 +160,22 @@ export const updateMember = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+export const getVendorProfile = async (req, res) => {
+  try {
+    const id = req.vendor.id;
+    const [rows] = await db.execute(
+      `SELECT v.id, v.username, v.email, v.number, v.package_type, 
+              c.id AS company_id, c.name AS company_name
+       FROM vendors v
+       JOIN companies c ON v.company_id = c.id
+       WHERE v.id = ?`,
+      [id]
+    );
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Vendor not found" });
+    }
+    res.status(200).json({ vendor: rows[0] });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
