@@ -64,7 +64,7 @@ export const addVendor = async (req, res) => {
   const { company_id, username, email, password, number, package_type } =
     req.body;
   try {
-    if ((!company_id, !username, !email, !password, !number)) {
+    if ((!company_id || !username || !email || !password || !number)) {
       return res
         .status(400)
         .json({ message: "All required fields must be filled" });
@@ -157,7 +157,7 @@ export const getCompanyForAdmin = async (req, res) => {
       message: "Companies fetched successfully",
       companies: rows,
     });
-  } catch (error) {
+  } catch (error) { 
     res.status(500).json({ message: error.message });
   }
 };

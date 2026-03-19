@@ -71,7 +71,7 @@ export const addMember = async (req, res) => {
   try {
     const { name, phone, email } = req.body;
     const company_id = req.vendor.company_id;
-    if ((!name || !phone, !email)) {
+    if ((!name || !phone || !email)) {
       return res.status(400).json({ message: "All fields are required" });
     }
     const [existingMember] = await db.execute(
@@ -91,11 +91,72 @@ export const addMember = async (req, res) => {
   }
 };
 
-export const getMembers = async (req, res) =>{
+export const getMembers = async (req, res) => {
+  try {
+    const company_id = req.vendor.company_id;
+    const [rows] = await db.execute(
+      "SELECT * FROM members WHERE company_id = ?",
+      [company_id]
+    );
+    res.status(200).json({ message: "Members fetched successfully", members: rows });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+//getting member by email or phone number
+export const searchMember = async (req, res) => {
+  const { query } = req.query;
   const company_id = req.vendor.company_id;
-  const[rows] = await db.execute(
-    "SELECT * FROM members WHERE comapny_id =? ",
-    [company_id]
-  );
-  res.json(rows);
-}
+  try {
+    if (!query) {
+      return res.status(400).json({ message: "Search query is required" });
+    }
+    const [rows] = await db.execute(
+      "SELECT * FROM members WHERE company_id = ? AND (phone = ? OR email = ?)",
+      [company_id, query, query]
+    );
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Member not found" });
+    }
+    res.status(200).json({ message: "Member found", members: rows });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+ export const deleteMember =  async(req, res) =>{
+  const {id} = req.params;
+  try {
+    const [existingmember] = await db.execute(
+      "SELECT id FROM members WHERE id=?",[id]
+    );
+    if(existingmember.length===0){
+      return res.status(404).json({message:"Member does not found"});
+    };
+    await db.execute("DELETE FROM members WHERE id=?",[id]);
+    res.status(200).json({message:"Member deleted successfully"});
+  } catch (error) {
+    res.status(500).json({error:error.message})
+    
+  }
+ };
+
+export const updateMember = async (req, res) => {
+  const { id } = req.params;
+  const { name, phone, email } = req.body;
+  try {
+    const [existingMember] = await db.execute(
+      "SELECT id FROM members WHERE id=?", [id]
+    );
+    if (existingMember.length === 0) {
+      return res.status(404).json({ message: "Member not found" });
+    }
+    await db.execute(
+      "UPDATE members SET name=?, phone=?, email=? WHERE id=?",
+      [name, phone, email, id]
+    );
+    res.status(200).json({ message: "Member updated successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

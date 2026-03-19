@@ -28,6 +28,15 @@ CREATE TABLE vendors (
         ON UPDATE CASCADE
 );
 
+CREATE TABLE members (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    company_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    email VARCHAR(255) UNIQUE,
+    FOREIGN KEY (company_id) REFERENCES companies(id)
+);
+
 CREATE TABLE schedules (
     id INT AUTO_INCREMENT PRIMARY KEY,
     company_id INT,
@@ -36,13 +45,4 @@ CREATE TABLE schedules (
     end_time TIME,
     FOREIGN KEY (company_id) REFERENCES companies(id),
     FOREIGN KEY (member_id) REFERENCES members(id)
-);
-CREATE TABLE members (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    company_id INT NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    phone VARCHAR(20) NOT NULL,
-    email VARCHAR(255) UNIQUE,
-    FOREIGN KEY (company_id) REFERENCES companies(id)
-        
 );
