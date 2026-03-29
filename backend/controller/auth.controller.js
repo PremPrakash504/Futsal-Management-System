@@ -98,7 +98,7 @@ export const addVendor = async (req, res) => {
 
 export const getVendor = async (req, res) => {
   try {
-    const [rows] = await db.execute("SELECT * FROM vendors ");
+    const [rows] = await db.execute("SELECT id, company_id, username, email, number, package_type FROM vendors");
 
     if (rows.length === 0) {
       return res.status(404).json({ message: "Vendor not found" });
